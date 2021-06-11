@@ -1,0 +1,50 @@
+version: '3.0'
+services:
+    postgres:
+        image: postgres
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+        volumes:
+            - ./data:/opt/airflow/data
+            - ./reports:/opt/airflow/reports
+            - ./scripts/database_script.sql:/docker-entrypoint-initdb.d/init.sql
+        ports:
+            - "5432:5432"
+    scheduler:
+        image: apache/airflow:1.10.14
+        entrypoint: ./scripts/scheduler_entrypoint.sh
+        depends_on:
+            - postgres
+            - webserver
+        env_file:
+            - .env
+        volumes:
+            - ./dags:/opt/airflow/dags
+            - ./operators:/opt/airflow/operators
+            - ./reports:/opt/airflow/reports
+            - ./utils:/opt/airflow/utils
+            - ./logs:/opt/airflow/logs
+            - ./data:/opt/airflow/data
+            - ./scripts:/opt/airflow/scripts
+            - ./requirements.txt:/opt/airflow/requirements.txt
+            - ./test:/opt/airflow/test
+
+    webserver:
+        image: apache/airflow:1.10.14
+        entrypoint: ./scripts/entrypoint.sh
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        volumes:
+            - ./operators:/opt/airflow/operators
+            - ./dags:/opt/airflow/dags
+            - ./logs:/opt/airflow/logs
+            - ./scripts:/opt/airflow/scripts
+            - ./utils:/opt/airflow/utils
+            - ./data:/opt/airflow/data
+            - ./test:/opt/airflow/test
+        ports:
+            - "8080:8080"
